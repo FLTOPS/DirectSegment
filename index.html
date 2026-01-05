@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <title>CesiumJS Land Only</title>
+  <title>CesiumJS Land (TopoJSON)</title>
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
     html, body, #cesiumContainer {
@@ -18,31 +18,26 @@
     // 뷰어 초기화 (OpenStreetMap 배경)
     const viewer = new Cesium.Viewer('cesiumContainer', {
       imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-        url : 'https://tile.openstreetmap.org/'
+        url: 'https://tile.openstreetmap.org/'
       }),
       baseLayerPicker: false,
       animation: false,
       timeline: false
     });
 
-    // 육지 (흰색)
-    Cesium.GeoJsonDataSource.load('land.geojson', {
-      stroke: Cesium.Color.WHITE,
-      fill: Cesium.Color.WHITE.withAlpha(1.0),
+    // TopoJSON 로드 (육지만 표시)
+    Cesium.GeoJsonDataSource.load('land.topojson', {
+      stroke: Cesium.Color.BLACK,
+      fill: Cesium.Color.WHITE.withAlpha(0.85),
       strokeWidth: 1
-    }).then(ds => viewer.dataSources.add(ds));
-
-    // 서울 마커 추가 (테스트용)
-    const pinBuilder = new Cesium.PinBuilder();
-    const seoulBillboard = viewer.entities.add({
-      name: "서울",
-      position: Cesium.Cartesian3.fromDegrees(126.9780, 37.5665),
-      billboard: {
-        image: pinBuilder.fromColor(Cesium.Color.RED, 48),
-        verticalOrigin: Cesium.VerticalOrigin.BOTTOM
-      }
+    })
+    .then((ds) => {
+      viewer.dataSources.add(ds);
+      return viewer.zoomTo(ds); // 데이터 범위로 줌
+    })
+    .catch((err) => {
+      console.error('TopoJSON 로드 오류:', err);
     });
-    viewer.zoomTo(seoulBillboard);
   </script>
 </body>
 </html>
