@@ -17,11 +17,9 @@
   <!-- CesiumJS 라이브러리 (CDN) -->
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
   <script>
-    // 뷰어 초기화 (OpenStreetMap 배경 추가)
+    // 뷰어 초기화 (World Imagery 배경 추가)
     const viewer = new Cesium.Viewer('cesiumContainer', {
-      imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-        url : 'https://a.tile.openstreetmap.org/'
-      }),
+      imageryProvider: Cesium.createWorldImagery(),
       baseLayerPicker: false,
       animation: false,
       timeline: false
