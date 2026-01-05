@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <title>CesiumJS Land (TopoJSON)</title>
-  <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <title>CesiumJS Globe (Land & Sea)</title>
+  <link href="Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
     html, body, #cesiumContainer {
       width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
@@ -13,30 +13,33 @@
 <body>
   <div id="cesiumContainer"></div>
 
-  <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
+  <!-- 로컬에 다운로드한 CesiumJS 라이브러리 불러오기 -->
+  <script src="Cesium/Cesium.js"></script>
   <script>
-    // 뷰어 초기화 (OpenStreetMap 배경)
+    // 뷰어 초기화 (배경 타일 제거)
     const viewer = new Cesium.Viewer('cesiumContainer', {
-      imageryProvider: new Cesium.OpenStreetMapImageryProvider({
-        url: 'https://tile.openstreetmap.org/'
-      }),
+      imageryProvider: false,   // 외부 지도 타일 사용 안 함
       baseLayerPicker: false,
       animation: false,
       timeline: false
     });
 
-    // TopoJSON 로드 후 스타일 직접 지정
+    // 바다 색상 지정 (구 기본 색상)
+    viewer.scene.globe.baseColor = Cesium.Color.BLUE;
+
+    // 육지 데이터 불러오기 (land.topojson)
     Cesium.GeoJsonDataSource.load('land.topojson').then(function(ds) {
       viewer.dataSources.add(ds);
       const entities = ds.entities.values;
       for (let i = 0; i < entities.length; i++) {
-        if (entities[i].polygon) {
-          entities[i].polygon.material = Cesium.Color.WHITE.withAlpha(0.85); // 면 색상
-          entities[i].polygon.outline = true;                               // 윤곽선 표시
-          entities[i].polygon.outlineColor = Cesium.Color.BLACK;            // 윤곽선 색상
+        const e = entities[i];
+        if (e.polygon) {
+          e.polygon.material = Cesium.Color.WHITE;   // 육지 흰색
+          e.polygon.outline = true;                  // 윤곽선 표시
+          e.polygon.outlineColor = Cesium.Color.BLACK;
         }
       }
-      viewer.zoomTo(ds); // 데이터 범위로 줌
+      viewer.zoomTo(ds); // 데이터 범위로 카메라 이동
     }).catch(function(err) {
       console.error('TopoJSON 로드 오류:', err);
     });
