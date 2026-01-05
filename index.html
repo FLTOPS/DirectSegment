@@ -27,20 +27,27 @@
       timeline: false
     });
 
-    // ocean.geojson 불러오기
+    // 바다 (파란색)
     Cesium.GeoJsonDataSource.load('ocean.geojson', {
       stroke: Cesium.Color.BLUE,
       fill: Cesium.Color.BLUE.withAlpha(0.5),
       strokeWidth: 1
     }).then(ds => viewer.dataSources.add(ds));
 
-    // lines.geojson 불러오기
+    // 육지 (흰색)
+    Cesium.GeoJsonDataSource.load('land.geojson', {
+      stroke: Cesium.Color.WHITE,
+      fill: Cesium.Color.WHITE.withAlpha(1.0),
+      strokeWidth: 1
+    }).then(ds => viewer.dataSources.add(ds));
+
+    // 선 (검은색)
     Cesium.GeoJsonDataSource.load('lines.geojson', {
       stroke: Cesium.Color.BLACK,
       strokeWidth: 2
     }).then(ds => viewer.dataSources.add(ds));
 
-    // grid.geojson 불러오기
+    // 격자 (회색)
     Cesium.GeoJsonDataSource.load('grid.geojson', {
       stroke: Cesium.Color.GRAY,
       strokeWidth: 1
