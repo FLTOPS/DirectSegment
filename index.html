@@ -3,7 +3,6 @@
 <head>
   <meta charset="utf-8">
   <title>CesiumJS 지구본 지도</title>
-  <!-- CesiumJS CSS (CDN) -->
   <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
   <style>
     html, body, #cesiumContainer {
@@ -14,15 +13,14 @@
 <body>
   <div id="cesiumContainer"></div>
 
-  <!-- CesiumJS 라이브러리 (CDN) -->
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
   <script>
-    // 뷰어 초기화 (World Imagery 배경 추가)
+    // 배경 타일 제거 → 흰색/파란색만 표시
     const viewer = new Cesium.Viewer('cesiumContainer', {
-      imageryProvider: Cesium.createWorldImagery(),
       baseLayerPicker: false,
       animation: false,
-      timeline: false
+      timeline: false,
+      imageryProvider: false
     });
 
     // 바다 (파란색)
@@ -51,7 +49,7 @@
       strokeWidth: 1
     }).then(ds => viewer.dataSources.add(ds));
 
-    // 서울 마커 추가
+    // 서울 마커
     const pinBuilder = new Cesium.PinBuilder();
     const seoulBillboard = viewer.entities.add({
       name: "서울",
