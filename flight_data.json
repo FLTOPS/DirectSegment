@@ -1,0 +1,156 @@
+[
+  {
+    "route_id": "ICN_LAX_OUT",
+    "route_name": "[미주] 인천(ICN) ➡️ 로스앤젤레스(LAX)",
+    "segments": [
+      {
+        "start_wpt": "KANSU",
+        "end_wpt": "OPULA",
+        "coords": [[38.5, 130.2], [41.2, 145.5]],
+        "fuel_saving": 250,
+        "time_saving": 6
+      },
+      {
+        "start_wpt": "NATES",
+        "end_wpt": "ALPOR",
+        "coords": [[43.5, 175.0], [40.1, 220.5]],
+        "fuel_saving": 410,
+        "time_saving": 12
+      }
+    ]
+  },
+  {
+    "route_id": "LAX_ICN_IN",
+    "route_name": "[미주] 로스앤젤레스(LAX) ➡️ 인천(ICN)",
+    "segments": [
+      {
+        "start_wpt": "LIN P",
+        "end_wpt": "ADKAK",
+        "coords": [[37.5, 235.0], [51.5, 185.0]],
+        "fuel_saving": 300,
+        "time_saving": 9
+      }
+    ]
+  },
+  {
+    "route_id": "ICN_JFK_OUT",
+    "route_name": "[미주] 인천(ICN) ➡️ 뉴욕(JFK)",
+    "segments": [
+      {
+        "start_wpt": "AGAVO",
+        "end_wpt": "KALNA",
+        "coords": [[45.2, 135.0], [55.1, 160.0]],
+        "fuel_saving": 500,
+        "time_saving": 15
+      },
+      {
+        "start_wpt": "ANC",
+        "end_wpt": "BETTE",
+        "coords": [[61.1, 210.0], [50.5, 260.0]],
+        "fuel_saving": 220,
+        "time_saving": 5
+      }
+    ]
+  },
+  {
+    "route_id": "JFK_ICN_IN",
+    "route_name": "[미주] 뉴욕(JFK) ➡️ 인천(ICN)",
+    "segments": [
+      {
+        "start_wpt": "MONTY",
+        "end_wpt": "YRL",
+        "coords": [[55.0, 270.0], [65.0, 230.0]],
+        "fuel_saving": 450,
+        "time_saving": 11
+      }
+    ]
+  },
+  {
+    "route_id": "ICN_SFO_OUT",
+    "route_name": "[미주] 인천(ICN) ➡️ 샌프란시스코(SFO)",
+    "segments": [
+      {
+        "start_wpt": "JINBU",
+        "end_wpt": "MEMIS",
+        "coords": [[38.0, 129.0], [42.0, 150.0]],
+        "fuel_saving": 180,
+        "time_saving": 4
+      }
+    ]
+  },
+  {
+    "route_id": "ICN_LHR_OUT",
+    "route_name": "[유럽] 인천(ICN) ➡️ 런던(LHR)",
+    "segments": [
+      {
+        "start_wpt": "BEKOL",
+        "end_wpt": "SERNA",
+        "coords": [[45.0, 105.0], [55.0, 80.0]],
+        "fuel_saving": 600,
+        "time_saving": 18
+      }
+    ]
+  },
+  {
+    "route_id": "LHR_ICN_IN",
+    "route_name": "[유럽] 런던(LHR) ➡️ 인천(ICN)",
+    "segments": [
+      {
+        "start_wpt": "ABERO",
+        "end_wpt": "TERBA",
+        "coords": [[52.0, 20.0], [48.0, 50.0]],
+        "fuel_saving": 320,
+        "time_saving": 10
+      }
+    ]
+  },
+  {
+    "route_id": "ICN_CDG_OUT",
+    "route_name": "[유럽] 인천(ICN) ➡️ 파리(CDG)",
+    "segments": [
+      {
+        "start_wpt": "URL",
+        "end_wpt": "MOS",
+        "coords": [[54.0, 60.0], [55.0, 37.0]],
+        "fuel_saving": 400,
+        "time_saving": 12
+      }
+    ]
+  },
+  {
+    "route_id": "CDG_ICN_IN",
+    "route_name": "[유럽] 파리(CDG) ➡️ 인천(ICN)",
+    "segments": [
+      {
+        "start_wpt": "GOL",
+        "end_wpt": "SIV",
+        "coords": [[45.0, 40.0], [40.0, 70.0]],
+        "fuel_saving": 210,
+        "time_saving": 7
+      }
+    ]
+  },
+  {
+    "route_id": "ICN_FRA_OUT",
+    "route_name": "[유럽] 인천(ICN) ➡️ 프랑크푸르트(FRA)",
+    "segments": [
+      {
+        "start_wpt": "TIR",
+        "end_wpt": "POL",
+        "coords": [[50.0, 85.0], [52.0, 20.0]],
+        "fuel_saving": 550,
+        "time_saving": 14
+      }
+    ]
+  },
+  {
+    "route_id": "ICN_BKK_OUT",
+    "route_name": "[동남아] 인천(ICN) ➡️ 방콕(BKK)",
+    "segments": [
+      {
+        "start_wpt": "HKG",
+        "end_wpt": "DAN",
+        "coords": [[22.3, 114.1], [16.0, 108.2]],
+        "fuel_saving": 150,
+        "time_saving": 5
+      }

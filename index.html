@@ -1,48 +1,179 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <title>CesiumJS Globe (Land & Sea)</title>
-  <link href="Cesium/Widgets/widgets.css" rel="stylesheet">
-  <style>
-    html, body, #cesiumContainer {
-      width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Segment Visualization</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f4f9; }
+        header { background-color: #2c3e50; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { margin: 0; font-size: 1.5rem; }
+        .controls { background: white; padding: 15px; border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 10px; }
+        select { padding: 8px; font-size: 1rem; border-radius: 4px; border: 1px solid #ccc; min-width: 300px; }
+        .container { display: flex; height: calc(100vh - 130px); }
+        #map { flex: 2; height: 100%; z-index: 1; background: #aad3df; /* 바다색 배경 추가 */ }
+        .info-panel { flex: 1; padding: 20px; background: white; overflow-y: auto; border-left: 1px solid #ddd; min-width: 300px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; font-size: 0.9rem; }
+        th { background-color: #34495e; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .summary-card { background: #ecf0f1; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .summary-title { font-weight: bold; color: #7f8c8d; font-size: 0.9rem; }
+        .summary-value { font-size: 1.5rem; color: #2c3e50; font-weight: bold; margin-top: 5px; }
+        #loading { padding: 20px; text-align: center; color: #666; }
+    </style>
 </head>
 <body>
-  <div id="cesiumContainer"></div>
 
-  <!-- 로컬에 다운로드한 CesiumJS 라이브러리 불러오기 -->
-  <script src="Cesium/Cesium.js"></script>
-  <script>
-    // 뷰어 초기화 (배경 타일 제거)
-    const viewer = new Cesium.Viewer('cesiumContainer', {
-      imageryProvider: false,   // 외부 지도 타일 사용 안 함
-      baseLayerPicker: false,
-      animation: false,
-      timeline: false
-    });
+<header>
+    <h1>✈️ Flight Direct Segment Dashboard</h1>
+</header>
 
-    // 바다 색상 지정 (구 기본 색상)
-    viewer.scene.globe.baseColor = Cesium.Color.BLUE;
+<div class="controls">
+    <label for="routeSelect"><strong>노선 선택:</strong></label>
+    <select id="routeSelect">
+        <option value="" disabled selected>노선을 선택해주세요</option>
+    </select>
+</div>
 
-    // 육지 데이터 불러오기 (land.topojson)
-    Cesium.GeoJsonDataSource.load('land.topojson').then(function(ds) {
-      viewer.dataSources.add(ds);
-      const entities = ds.entities.values;
-      for (let i = 0; i < entities.length; i++) {
-        const e = entities[i];
-        if (e.polygon) {
-          e.polygon.material = Cesium.Color.WHITE;   // 육지 흰색
-          e.polygon.outline = true;                  // 윤곽선 표시
-          e.polygon.outlineColor = Cesium.Color.BLACK;
+<div class="container">
+    <div id="map"></div>
+    
+    <div class="info-panel">
+        <div id="dashboard-content" style="display:none;">
+            <h2>📊 구간 상세 정보</h2>
+            
+            <div class="summary-card">
+                <div class="summary-title">총 평균 연료 절감 (Total Avg Fuel Saving)</div>
+                <div class="summary-value" id="totalFuel">0 kg</div>
+            </div>
+            
+            <div class="summary-card">
+                <div class="summary-title">총 평균 시간 단축 (Total Avg Time Saving)</div>
+                <div class="summary-value" id="totalTime">0 min</div>
+            </div>
+
+            <h3>Segment List</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Start WPT</th>
+                        <th>End WPT</th>
+                        <th>Fuel (kg)</th>
+                        <th>Time (min)</th>
+                    </tr>
+                </thead>
+                <tbody id="segmentTableBody">
+                </tbody>
+            </table>
+        </div>
+        <div id="loading">데이터를 불러오는 중이거나 노선이 선택되지 않았습니다.</div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // 1. 지도 초기화 (태평양 중심 좌표로 변경)
+    // [35, 170]: 위도 35도, 경도 170도 (태평양 한가운데)
+    // worldCopyJump: 지도를 계속 드래그할 때 마커가 따라오도록 설정
+    const map = L.map('map', {
+        worldCopyJump: true
+    }).setView([35, 170], 3);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let flightData = [];
+    let currentLayers = L.layerGroup().addTo(map);
+
+    fetch('flight_data.json')
+        .then(response => response.json())
+        .then(data => {
+            flightData = data;
+            initDropdown();
+        })
+        .catch(error => {
+            console.error('Error loading JSON:', error);
+            document.getElementById('loading').innerText = "데이터 로드 실패. flight_data.json 파일을 확인하세요.";
+        });
+
+    function initDropdown() {
+        const select = document.getElementById('routeSelect');
+        flightData.forEach(route => {
+            const option = document.createElement('option');
+            option.value = route.route_id;
+            option.text = route.route_name;
+            select.appendChild(option);
+        });
+
+        select.addEventListener('change', (e) => {
+            updateDashboard(e.target.value);
+        });
+    }
+
+    function updateDashboard(routeId) {
+        currentLayers.clearLayers();
+        const selectedRoute = flightData.find(r => r.route_id === routeId);
+        if (!selectedRoute) return;
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('dashboard-content').style.display = 'block';
+
+        const tableBody = document.getElementById('segmentTableBody');
+        tableBody.innerHTML = '';
+        let totalFuel = 0;
+        let totalTime = 0;
+        let bounds = [];
+
+        selectedRoute.segments.forEach(seg => {
+            totalFuel += seg.fuel_saving;
+            totalTime += seg.time_saving;
+
+            const polyline = L.polyline(seg.coords, {
+                color: 'blue',
+                weight: 4,
+                opacity: 0.7,
+                dashArray: '10, 10'
+            }).addTo(currentLayers);
+
+            const startMarker = L.circleMarker(seg.coords[0], { radius: 5, color: 'green' }).addTo(currentLayers);
+            const endMarker = L.circleMarker(seg.coords[1], { radius: 5, color: 'red' }).addTo(currentLayers);
+
+            const popupContent = `
+                <b>${seg.start_wpt} ➡️ ${seg.end_wpt}</b><br>
+                Fuel Saving: ${seg.fuel_saving}kg<br>
+                Time Saving: ${seg.time_saving}min
+            `;
+            polyline.bindPopup(popupContent);
+            
+            // 지도 줌을 맞추기 위해 좌표 수집
+            bounds.push(seg.coords[0]);
+            bounds.push(seg.coords[1]);
+
+            const row = `
+                <tr>
+                    <td>${seg.start_wpt}</td>
+                    <td>${seg.end_wpt}</td>
+                    <td>${seg.fuel_saving}</td>
+                    <td>${seg.time_saving}</td>
+                </tr>
+            `;
+            tableBody.innerHTML += row;
+        });
+
+        document.getElementById('totalFuel').innerText = `${totalFuel} kg`;
+        document.getElementById('totalTime').innerText = `${totalTime} min`;
+
+        if (bounds.length > 0) {
+            // fitBounds를 할 때 maxZoom을 제한하여 너무 확대되지 않게 함
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 6 });
         }
-      }
-      viewer.zoomTo(ds); // 데이터 범위로 카메라 이동
-    }).catch(function(err) {
-      console.error('TopoJSON 로드 오류:', err);
-    });
-  </script>
+    }
+</script>
+
 </body>
 </html>
