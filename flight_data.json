@@ -1,28 +1,34 @@
 [
   {
     "route_id": "ICN_LAX_OUT",
-    "route_name": "[미주] 인천(ICN) -> 로스앤젤레스(LAX)",
+    "route_name": "ICN ➡️ LAX",
     "segments": [
-      {
-        "start_wpt": "KANSU",
-        "end_wpt": "OPULA",
-        "coords": [[38.5, 130.2], [41.2, 145.5]],
-        "fuel_saving": 250,
-        "time_saving": 6
-      }
+      {"start": "KANSU", "end": "OPULA", "coords": [[38.5, 130.2], [41.2, 145.5]], "fuel": 550, "time": 6},
+      {"start": "OPULA", "end": "NATES", "coords": [[41.2, 145.5], [43.0, 160.0]], "fuel": 320, "time": 4},
+      {"start": "NATES", "end": "BETTE", "coords": [[43.0, 160.0], [45.5, 185.0]], "fuel": 680, "time": 11},
+      {"start": "BETTE", "end": "ALPOR", "coords": [[45.5, 185.0], [42.0, 210.0]], "fuel": 450, "time": 7},
+      {"start": "ALPOR", "end": "COYOT", "coords": [[42.0, 210.0], [38.0, 230.0]], "fuel": 210, "time": 3},
+      {"start": "COYOT", "end": "ZIGGY", "coords": [[38.0, 230.0], [35.5, 240.5]], "fuel": 180, "time": 2},
+      {"start": "WPT01", "end": "WPT02", "coords": [[44.0, 165.0], [44.5, 175.0]], "fuel": 150, "time": 3},
+      {"start": "WPT03", "end": "WPT04", "coords": [[46.0, 190.0], [46.5, 200.0]], "fuel": 280, "time": 5},
+      {"start": "WPT05", "end": "WPT06", "coords": [[40.0, 215.0], [39.0, 225.0]], "fuel": 340, "time": 6},
+      {"start": "WPT07", "end": "WPT08", "coords": [[36.0, 235.0], [35.0, 241.0]], "fuel": 120, "time": 2}
     ]
   },
   {
-    "route_id": "ICN_LHR_OUT",
-    "route_name": "[유럽] 인천(ICN) -> 런던(LHR)",
+    "route_id": "LHR_ICN_IN",
+    "route_name": "LHR ➡️ ICN",
     "segments": [
-      {
-        "start_wpt": "BEKOL",
-        "end_wpt": "SERNA",
-        "coords": [[45.0, 105.0], [55.0, 80.0]],
-        "fuel_saving": 600,
-        "time_saving": 18
-      }
+      {"start": "ABERO", "end": "TERBA", "coords": [[52.0, 20.0], [48.0, 50.0]], "fuel": 850, "time": 14},
+      {"start": "WPT01", "end": "WPT02", "coords": [[47.0, 55.0], [46.0, 65.0]], "fuel": 300, "time": 5},
+      {"start": "WPT03", "end": "WPT04", "coords": [[45.5, 70.0], [44.0, 80.0]], "fuel": 420, "time": 7},
+      {"start": "WPT05", "end": "WPT06", "coords": [[43.0, 85.0], [42.0, 95.0]], "fuel": 280, "time": 4},
+      {"start": "WPT07", "end": "WPT08", "coords": [[41.0, 100.0], [40.0, 110.0]], "fuel": 510, "time": 9},
+      {"start": "WPT09", "end": "WPT10", "coords": [[39.0, 115.0], [38.5, 120.0]], "fuel": 190, "time": 3},
+      {"start": "WPT11", "end": "WPT12", "coords": [[38.0, 122.0], [37.8, 124.0]], "fuel": 150, "time": 2},
+      {"start": "WPT13", "end": "WPT14", "coords": [[37.6, 125.0], [37.5, 126.0]], "fuel": 100, "time": 1},
+      {"start": "WPT15", "end": "WPT16", "coords": [[37.4, 126.5], [37.45, 126.4]], "fuel": 80, "time": 1},
+      {"start": "WPT17", "end": "WPT18", "coords": [[37.46, 126.3], [37.46, 126.43]], "fuel": 50, "time": 1}
     ]
   }
 ]
