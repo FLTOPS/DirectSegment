@@ -7,33 +7,27 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f7f9; }
-        
-        /* Compact Header (1/3 height) */
         header { background: #2c3e50; color: white; padding: 8px 20px; min-height: 35px; display: flex; align-items: center; }
         h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.5px; }
-
         .controls { padding: 10px 20px; background: white; border-bottom: 1px solid #d1d8dd; display: flex; align-items: center; gap: 12px; }
         select { padding: 6px 10px; font-size: 0.9rem; border: 1px solid #bcc6cc; border-radius: 4px; min-width: 300px; outline: none; cursor: pointer; }
-
         .container { display: flex; flex: 1; overflow: hidden; }
         #map { flex: 1.8; background: #aad3df; }
-        
-        /* Information Side Panel */
         .info-panel { flex: 1.2; padding: 20px; overflow-y: auto; background: white; border-left: 1px solid #d1d8dd; }
-        
         .summary-box { display: flex; gap: 15px; margin-bottom: 20px; }
         .card { flex: 1; background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 4px solid #3498db; }
         .card-label { font-size: 0.7rem; color: #7f8c8d; font-weight: bold; text-transform: uppercase; }
         .card-value { font-size: 1.2rem; color: #2c3e50; font-weight: bold; margin-top: 3px; }
-
-        /* Table Styling */
         table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
         thead th { background: #34495e; color: white; position: sticky; top: -20px; padding: 10px 5px; z-index: 10; }
         tbody td { border-bottom: 1px solid #edf1f2; padding: 8px 5px; text-align: center; }
-        tbody tr:hover { background: #f1f4f6; }
+        
+        /* New: Clickable Row Style */
+        tbody tr { cursor: pointer; transition: background 0.2s; }
+        tbody tr:hover { background: #e8f4fd; }
+        tbody tr.active-row { background: #d1e9ff !important; font-weight: bold; }
 
         .status-msg { text-align: center; margin-top: 50px; color: #95a5a6; }
-        .error-msg { color: #e74c3c; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -51,30 +45,16 @@
     <div id="map"></div>
     <div class="info-panel">
         <div id="statusView" class="status-msg">Initializing data...</div>
-        
         <div id="contentView" style="display:none;">
             <h2 id="routeTitle" style="margin: 0 0 15px 0; color: #2c3e50; font-size: 1.2rem;">-</h2>
-            
             <div class="summary-box">
-                <div class="card">
-                    <div class="card-label">Avg Fuel Saving</div>
-                    <div class="card-value" id="totalFuel">0 lbs</div>
-                </div>
-                <div class="card" style="border-left-color: #27ae60;">
-                    <div class="card-label">Avg Time Saving</div>
-                    <div class="card-value" id="totalTime">0 min</div>
-                </div>
+                <div class="card"><div class="card-label">Avg Fuel Saving</div><div class="card-value" id="totalFuel">0 lbs</div></div>
+                <div class="card" style="border-left-color: #27ae60;"><div class="card-label">Avg Time Saving</div><div class="card-value" id="totalTime">0 min</div></div>
             </div>
-
-            <h3 style="font-size: 0.9rem; color: #7f8c8d; margin-bottom: 10px;">SEGMENT LOGS</h3>
+            <h3 style="font-size: 0.9rem; color: #7f8c8d; margin-bottom: 5px;">SEGMENT LOGS (Click row to focus)</h3>
             <table>
                 <thead>
-                    <tr>
-                        <th>Start</th>
-                        <th>End</th>
-                        <th>Fuel(lbs)</th>
-                        <th>Time(m)</th>
-                    </tr>
+                    <tr><th>Start</th><th>End</th><th>Fuel(lbs)</th><th>Time(m)</th></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
@@ -84,39 +64,27 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // 1. Map Init (Pacific Center)
     const map = L.map('map', { worldCopyJump: true }).setView([30, 165], 3);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     const layers = L.layerGroup().addTo(map);
 
     let flightData = [];
+    let segmentPolylines = []; // Store line objects for highlighting
 
-    // 2. Fetch Data with Cache-Busting
     fetch('./flight_data.json?v=' + Date.now())
-        .then(res => {
-            if (!res.ok) throw new Error('Data file not found (404)');
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
             flightData = data;
             const select = document.getElementById('routeSelect');
             select.innerHTML = '<option value="" disabled selected>Select a route (' + data.length + ')</option>';
-            
             data.forEach(r => {
                 const opt = document.createElement('option');
-                opt.value = r.route_id;
-                opt.textContent = r.route_name;
+                opt.value = r.route_id; opt.textContent = r.route_name;
                 select.appendChild(opt);
             });
-            document.getElementById('statusView').innerText = 'Please select a route from the menu.';
-        })
-        .catch(err => {
-            const status = document.getElementById('statusView');
-            status.innerHTML = `<span class="error-msg">Error: ${err.message}</span><br><small>Check flight_data.json file.</small>`;
-            console.error(err);
+            document.getElementById('statusView').innerText = 'Please select a route.';
         });
 
-    // 3. Update UI on Selection
     document.getElementById('routeSelect').onchange = function() {
         const route = flightData.find(r => r.route_id === this.value);
         if (!route) return;
@@ -126,36 +94,57 @@
         document.getElementById('routeTitle').innerText = route.route_name;
 
         layers.clearLayers();
+        segmentPolylines = []; 
         const tableBody = document.getElementById('tableBody');
         tableBody.innerHTML = '';
         
-        let tF = 0, tT = 0, pts = [];
+        let tF = 0, tT = 0, allPts = [];
 
-        route.segments.forEach(s => {
+        route.segments.forEach((s, index) => {
             tF += s.fuel; tT += s.time;
             
-            // Draw on Map
-            const poly = L.polyline(s.coords, {color: '#3498db', weight: 4, dashArray: '5, 8'}).addTo(layers);
+            // 1. Create Polyline
+            const poly = L.polyline(s.coords, {
+                color: '#3498db', 
+                weight: 4, 
+                dashArray: '5, 8',
+                index: index // custom property to link with table
+            }).addTo(layers);
+
             L.circleMarker(s.coords[0], {radius: 4, color: '#27ae60', fillOpacity: 1}).addTo(layers);
             L.circleMarker(s.coords[1], {radius: 4, color: '#e74c3c', fillOpacity: 1}).addTo(layers);
             
             poly.bindPopup(`<b>${s.start} ➡️ ${s.end}</b><br>${s.fuel} lbs saved`);
-            pts.push(s.coords[0], s.coords[1]);
+            segmentPolylines.push(poly);
+            allPts.push(s.coords[0], s.coords[1]);
 
-            // Append to Table
-            tableBody.innerHTML += `<tr>
-                <td><strong>${s.start}</strong></td>
-                <td><strong>${s.end}</strong></td>
-                <td>${s.fuel.toLocaleString()}</td>
-                <td>${s.time}</td>
-            </tr>`;
+            // 2. Create Table Row with Click Event
+            const row = document.createElement('tr');
+            row.innerHTML = `<td><strong>${s.start}</strong></td><td><strong>${s.end}</strong></td><td>${s.fuel.toLocaleString()}</td><td>${s.time}</td>`;
+            row.onclick = () => focusSegment(index, s.coords, row);
+            tableBody.appendChild(row);
         });
 
         document.getElementById('totalFuel').innerText = tF.toLocaleString() + " lbs";
         document.getElementById('totalTime').innerText = tT + " min";
-        
-        if (pts.length > 0) map.fitBounds(pts, {padding: [50, 50], maxZoom: 7});
+        if (allPts.length > 0) map.fitBounds(allPts, {padding: [50, 50]});
     };
+
+    // 3. Focus and Highlight Function
+    function focusSegment(index, coords, rowElement) {
+        // Reset all lines and rows
+        segmentPolylines.forEach(p => p.setStyle({ color: '#3498db', weight: 4 }));
+        document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('active-row'));
+
+        // Highlight selected
+        const selectedPoly = segmentPolylines[index];
+        selectedPoly.setStyle({ color: '#ff3300', weight: 8 }); // Red & Thick
+        selectedPoly.openPopup();
+        rowElement.classList.add('active-row');
+
+        // Zoom to segment
+        map.fitBounds(coords, { padding: [100, 100], maxZoom: 8 });
+    }
 </script>
 </body>
 </html>
