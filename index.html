@@ -2,55 +2,54 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Direct Segments - Interactive</title>
+    <title>Direct Segments - Enhanced</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
         header { background: #1e272e; color: white; padding: 8px 20px; min-height: 35px; display: flex; align-items: center; }
         h1 { margin: 0; font-size: 1.1rem; }
         .controls { padding: 10px 20px; background: white; border-bottom: 1px solid #d1d8dd; }
-        select { padding: 6px; width: 400px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; }
+        select { padding: 8px; width: 250px; font-weight: bold; cursor: pointer; border-radius: 4px; border: 2px solid #2c3e50; }
         .container { display: flex; flex: 1; overflow: hidden; }
         #map { flex: 1.8; background: #f0f0f0; }
         .info-panel { flex: 1.2; padding: 20px; overflow-y: auto; background: white; border-left: 1px solid #d1d8dd; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 10px; }
-        th { background: #34495e; color: white; padding: 10px; position: sticky; top: -20px; }
-        td { border-bottom: 1px solid #eee; padding: 10px; text-align: center; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { background: #2c3e50; color: white; padding: 12px; position: sticky; top: -20px; }
+        td { border-bottom: 1px solid #eee; padding: 12px; text-align: center; cursor: pointer; }
         tr:hover { background: #f1f4f6; }
-        .active-row { background: #e8f5e9 !important; font-weight: bold; }
+        .active-row { background: #e8f5e9 !important; font-weight: bold; border: 2px solid #00FF00; }
         
-        /* Waypoint Label Style */
+        /* Waypoint Label - 2x Larger & Black Text */
         .wp-label {
-            background: rgba(0, 0, 0, 0.8);
-            color: #00FF00;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 11px;
-            font-weight: bold;
+            background: #00FF00; /* Neon Green Background */
+            color: #000000;      /* Black Text */
+            padding: 5px 12px;
+            border-radius: 20px; /* Rounded Shape */
+            font-size: 22px;     /* 2x Larger */
+            font-weight: 900;
             white-space: nowrap;
-            border: 1px solid #00FF00;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border: 2px solid #000;
         }
     </style>
 </head>
 <body>
 
-<header><h1>DIRECT SEGMENTS DASHBOARD</h1></header>
+<header><h1>DIRECT SEGMENTS ANALYTICS</h1></header>
 
 <div class="controls">
-    <label><small><strong>SELECT ROUTE:</strong></small></label><br>
-    <select id="routeSelect"><option>Loading...</option></select>
+    <label><small><strong>SELECT SECTOR:</strong></small></label><br>
+    <select id="sectorSelect"><option>Loading...</option></select>
 </div>
 
 <div class="container">
     <div id="map"></div>
     <div class="info-panel">
-        <h2 id="routeTitle" style="font-size: 1.1rem; margin-top: 0;">Route Analysis</h2>
-        <div id="tableContainer">
-            <table>
-                <thead><tr><th>Start WP</th><th>End WP</th><th>Saving(lbs)</th><th>Time(m)</th></tr></thead>
-                <tbody id="tableBody"></tbody>
-            </table>
-        </div>
+        <h2 id="viewTitle" style="font-size: 1.2rem; margin-top: 0;">Sector Details</h2>
+        <table>
+            <thead><tr><th>Start WP</th><th>End WP</th><th>Saving(lbs)</th><th>Time(m)</th></tr></thead>
+            <tbody id="tableBody"></tbody>
+        </table>
     </div>
 </div>
 
@@ -61,77 +60,92 @@
 
     const atsLayer = L.layerGroup().addTo(map);
     const segmentLayer = L.layerGroup().addTo(map);
-    const labelLayer = L.layerGroup().addTo(map); // 라벨 전용 레이어
+    const labelLayer = L.layerGroup().addTo(map);
 
     let flightData = [];
-    let polylines = [];
+    let segmentObjects = [];
 
     fetch('./flight_data.json?v=' + Date.now())
         .then(res => res.json())
         .then(data => {
             flightData = data;
-            const select = document.getElementById('routeSelect');
+            const select = document.getElementById('sectorSelect');
             select.innerHTML = '';
-            data.forEach((route, idx) => {
+            data.forEach(item => {
                 const opt = document.createElement('option');
-                opt.value = route.route_id;
-                opt.textContent = route.route_name;
+                opt.value = item.sector;
+                opt.textContent = item.sector_name;
                 select.appendChild(opt);
-                
-                // 모든 ATS 루트를 배경에 검정색으로 표시
-                if(route.ats_route) {
-                    L.polyline(route.ats_route, {color: '#333', weight: 1.2, opacity: 0.25}).addTo(atsLayer);
-                }
             });
-            displayRoute(data[0]);
+            updateView(data[0]);
         });
 
-    document.getElementById('routeSelect').onchange = function() {
-        const selected = flightData.find(r => r.route_id === this.value);
-        if(selected) displayRoute(selected);
+    document.getElementById('sectorSelect').onchange = function() {
+        const selected = flightData.find(d => d.sector === this.value);
+        if(selected) updateView(selected);
     };
 
-    function displayRoute(route) {
+    function updateView(sectorData) {
+        atsLayer.clearLayers();
         segmentLayer.clearLayers();
         labelLayer.clearLayers();
-        polylines = [];
+        segmentObjects = [];
         const tableBody = document.getElementById('tableBody');
         tableBody.innerHTML = '';
-        document.getElementById('routeTitle').innerText = route.route_name;
+        document.getElementById('viewTitle').innerText = sectorData.sector_name + " - All Flights";
 
-        route.segments.forEach((s, i) => {
-            const poly = L.polyline(s.coords, {color: '#3498db', weight: 4, opacity: 0.7}).addTo(segmentLayer);
-            polylines.push(poly);
+        sectorData.flights.forEach(flight => {
+            // 1. 모든 ATS 루트 표시 (검정색)
+            L.polyline(flight.ats_route, {color: '#000', weight: 1.5, opacity: 0.2}).addTo(atsLayer);
 
-            const row = document.createElement('tr');
-            row.innerHTML = `<td>${s.start}</td><td>${s.end}</td><td>${s.fuel.toLocaleString()}</td><td>${s.time}</td>`;
-            row.onclick = () => {
-                // 하이라이트 초기화 및 적용
-                polylines.forEach(p => p.setStyle({color: '#3498db', weight: 4}));
-                labelLayer.clearLayers(); // 기존 라벨 제거
-
-                poly.setStyle({color: '#00FF00', weight: 7, opacity: 1}); 
-                document.querySelectorAll('tr').forEach(tr => tr.classList.remove('active-row'));
-                row.classList.add('active-row');
-
-                // Waypoint 라벨 생성
-                createLabel(s.coords[0], s.start);
-                createLabel(s.coords[1], s.end);
-
-                map.fitBounds(s.coords, {padding: [150, 150]});
-            };
-            tableBody.appendChild(row);
+            // 2. 해당 노선 내 모든 Direct Segments 추출 및 표기
+            flight.segments.forEach(s => {
+                const poly = L.polyline(s.coords, {color: '#3498db', weight: 5, opacity: 0.8}).addTo(segmentLayer);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${s.start}</td><td>${s.end}</td><td>${s.fuel.toLocaleString()}</td><td>${s.time}</td>`;
+                row.onclick = () => {
+                    highlight(poly, s, row);
+                };
+                tableBody.appendChild(row);
+                segmentObjects.push(poly);
+            });
         });
     }
 
-    function createLabel(coord, text) {
-        const icon = L.divIcon({
-            className: 'custom-label',
+    function highlight(poly, data, row) {
+        // 초기화
+        segmentObjects.forEach(p => p.setStyle({color: '#3498db', weight: 5, opacity: 0.8}));
+        labelLayer.clearLayers();
+        document.querySelectorAll('tr').forEach(tr => tr.classList.remove('active-row'));
+
+        // #00FF00 하이라이트 및 둥근 끝점 처리
+        poly.setStyle({
+            color: '#00FF00', 
+            weight: 10, 
+            opacity: 1, 
+            lineCap: 'round' // 끝점 둥글게
+        });
+        poly.bringToFront();
+        row.classList.add('active-row');
+
+        // 큰 검정색 글씨 라벨 (배경 초록색)
+        addBigLabel(data.coords[0], data.start);
+        addBigLabel(data.coords[1], data.end);
+
+        map.fitBounds(data.coords, {padding: [150, 150]});
+    }
+
+    function addBigLabel(coord, text) {
+        const labelIcon = L.divIcon({
+            className: 'custom-wp',
             html: `<div class="wp-label">${text}</div>`,
             iconSize: [0, 0],
-            iconAnchor: [0, 25] // 지점보다 약간 위에 표시
+            iconAnchor: [0, 40] 
         });
-        L.marker(coord, { icon: icon }).addTo(labelLayer);
+        L.marker(coord, { icon: labelIcon }).addTo(labelLayer);
+        // 지점 표시를 위한 작은 원형 마커 추가
+        L.circleMarker(coord, {radius: 6, color: '#000', fillColor: '#00FF00', fillOpacity: 1, weight: 2}).addTo(labelLayer);
     }
 </script>
 </body>

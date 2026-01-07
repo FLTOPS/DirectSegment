@@ -1,68 +1,36 @@
 [
   {
-    "route_id": "ICN_LAX_RT01",
-    "route_name": "RT01: SEALS - 36N150E - 40N170W - DACEM",
-    "ats_route": [[37.4, 126.4], [37.6, 129.8], [36, 145], [36, 150], [36, 160], [37, 170], [39, 180], [40, 190], [41, 200], [42, 210], [41, 220], [39, 230], [34, 240], [33.9, 241.6]],
-    "segments": [
-      {"start": "SEALS", "end": "36N150E", "coords": [[36, 145], [36, 150]], "fuel": 450, "time": 6},
-      {"start": "DACEM", "end": "PAINT", "coords": [[39, 230], [38, 232]], "fuel": 210, "time": 3},
-      {"start": "PIRAT", "end": "BURGL", "coords": [[36, 236], [35, 238]], "fuel": 180, "time": 2}
+    "sector": "ICN-LAX",
+    "sector_name": "ICN ➡️ LAX",
+    "flights": [
+      {
+        "flight_id": "RT01",
+        "ats_route": [[37.4, 126.4], [36, 150], [39, 180], [42, 210], [33.9, 241.6]],
+        "segments": [
+          {"start": "SEALS", "end": "36N150E", "coords": [[36, 145], [36, 150]], "fuel": 450, "time": 6},
+          {"start": "DACEM", "end": "PAINT", "coords": [[39, 230], [38, 232]], "fuel": 210, "time": 3}
+        ]
+      },
+      {
+        "flight_id": "RT02",
+        "ats_route": [[37.4, 126.4], [43, 150], [47, 180], [33.9, 241.6]],
+        "segments": [
+          {"start": "VESPA", "end": "ENI", "coords": [[43, 230], [39, 234]], "fuel": 405, "time": 6}
+        ]
+      }
     ]
   },
   {
-    "route_id": "ICN_LAX_RT02",
-    "route_name": "RT02: SEALS - 39N180E - ZUUMA4",
-    "ats_route": [[37.4, 126.4], [36, 150], [39, 180], [42, 210], [33.9, 241.6]],
-    "segments": [
-      {"start": "EGOBA", "end": "LANAT", "coords": [[37.6, 129.8], [37.8, 132.5]], "fuel": 520, "time": 7}
-    ]
-  },
-  {
-    "route_id": "ICN_LAX_RT03",
-    "route_name": "RT03: LEPKI - 40N180E - OAK - ZUUMA4",
-    "ats_route": [[37.4, 126.4], [37, 145], [37, 160], [40, 180], [43, 210], [37.8, 237.5], [33.9, 241.6]],
-    "segments": [
-      {"start": "TRYSH", "end": "ENI", "coords": [[40, 231], [39, 234]], "fuel": 310, "time": 4}
-    ]
-  },
-  {
-    "route_id": "ICN_LAX_RT04",
-    "route_name": "RT04: SEALS - 35N150E - ALLBE - ZUUMA4",
-    "ats_route": [[37.4, 126.4], [35, 150], [38, 180], [41, 210], [33.9, 241.6]],
-    "segments": [
-      {"start": "ALLBE", "end": "PIRAT", "coords": [[37, 233], [36, 236]], "fuel": 280, "time": 4}
-    ]
-  },
-  {
-    "route_id": "ICN_LAX_RT05",
-    "route_name": "RT05: EMRON - 44N180E - DACEM - IRNMN2",
-    "ats_route": [[37.4, 126.4], [40, 150], [44, 180], [41, 220], [33.9, 241.6]],
-    "segments": [
-      {"start": "PAINT", "end": "PIRAT", "coords": [[38, 232], [36, 236]], "fuel": 240, "time": 3}
-    ]
-  },
-  {
-    "route_id": "ICN_LAX_RT06",
-    "route_name": "RT06: KALNA - 47N180E - VESPA - IRNMN2",
-    "ats_route": [[37.4, 126.4], [43, 150], [47, 180], [43, 230], [33.9, 241.6]],
-    "segments": [
-      {"start": "VESPA", "end": "ENI", "coords": [[43, 230], [39, 234]], "fuel": 405, "time": 6}
-    ]
-  },
-  {
-    "route_id": "ICN_LAX_RT07",
-    "route_name": "RT07: OATIS - PLADO - CDB - BOXER",
-    "ats_route": [[37.4, 126.4], [45, 145], [52, 175], [55, 200], [50, 230], [33.9, 241.6]],
-    "segments": [
-      {"start": "KANUA", "end": "BOXER", "coords": [[42, 235], [40, 238]], "fuel": 195, "time": 3}
-    ]
-  },
-  {
-    "route_id": "ICN_LAX_RT08",
-    "route_name": "RT08: IGROD - TAKRA - ADNAP - EMRON - CDB",
-    "ats_route": [[37.4, 126.4], [35, 130], [33, 140], [42, 160], [55, 200], [40, 230], [33.9, 241.6]],
-    "segments": [
-      {"start": "NUDGE", "end": "ORNAI", "coords": [[50, 225], [48, 228]], "fuel": 330, "time": 5}
+    "sector": "ICN-EWR",
+    "sector_name": "ICN ➡️ EWR",
+    "flights": [
+      {
+        "flight_id": "RT01",
+        "ats_route": [[37.4, 126.4], [60, 150], [80, 180], [50, 260], [40.7, 285.8]],
+        "segments": [
+          {"start": "KALNA", "end": "40N170W", "coords": [[43, 145], [40, 190]], "fuel": 850, "time": 12}
+        ]
+      }
     ]
   }
 ]
