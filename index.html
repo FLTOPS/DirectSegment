@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Direct Segments - Enhanced</title>
+    <title>Direct Segments - Enhanced Analytics</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
@@ -19,17 +19,14 @@
         tr:hover { background: #f1f4f6; }
         .active-row { background: #e8f5e9 !important; font-weight: bold; border: 2px solid #00FF00; }
         
-        /* Waypoint Label - 2x Larger & Black Text */
+        /* Waypoint Label - 배경 제거 및 글자 강조 */
         .wp-label {
-            background: #00FF00; /* Neon Green Background */
-            color: #000000;      /* Black Text */
-            padding: 5px 12px;
-            border-radius: 20px; /* Rounded Shape */
-            font-size: 22px;     /* 2x Larger */
+            color: #000000;      /* 검정색 글자 */
+            font-size: 24px;     /* 기존보다 2배 크기 */
             font-weight: 900;
             white-space: nowrap;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            border: 2px solid #000;
+            /* 글자 시인성을 위해 흰색 외곽선 추가 */
+            text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff;
         }
     </style>
 </head>
@@ -55,6 +52,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+    // 지도 초기화
     const map = L.map('map', { worldCopyJump: true }).setView([38, 175], 3);
     L.tileLayer('https://{s}.tile.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
 
@@ -65,6 +63,7 @@
     let flightData = [];
     let segmentObjects = [];
 
+    // 데이터 불러오기
     fetch('./flight_data.json?v=' + Date.now())
         .then(res => res.json())
         .then(data => {
@@ -95,10 +94,10 @@
         document.getElementById('viewTitle').innerText = sectorData.sector_name + " - All Flights";
 
         sectorData.flights.forEach(flight => {
-            // 1. 모든 ATS 루트 표시 (검정색)
+            // ATS 루트 표시 (검정색)
             L.polyline(flight.ats_route, {color: '#000', weight: 1.5, opacity: 0.2}).addTo(atsLayer);
 
-            // 2. 해당 노선 내 모든 Direct Segments 추출 및 표기
+            // Direct Segments 표시
             flight.segments.forEach(s => {
                 const poly = L.polyline(s.coords, {color: '#3498db', weight: 5, opacity: 0.8}).addTo(segmentLayer);
                 
@@ -119,33 +118,41 @@
         labelLayer.clearLayers();
         document.querySelectorAll('tr').forEach(tr => tr.classList.remove('active-row'));
 
-        // #00FF00 하이라이트 및 둥근 끝점 처리
+        // #00FF00 하이라이트 및 둥근 끝점
         poly.setStyle({
             color: '#00FF00', 
             weight: 10, 
             opacity: 1, 
-            lineCap: 'round' // 끝점 둥글게
+            lineCap: 'round'
         });
         poly.bringToFront();
         row.classList.add('active-row');
 
-        // 큰 검정색 글씨 라벨 (배경 초록색)
-        addBigLabel(data.coords[0], data.start);
-        addBigLabel(data.coords[1], data.end);
+        // 라벨 및 마커 생성
+        addCleanLabel(data.coords[0], data.start);
+        addCleanLabel(data.coords[1], data.end);
 
         map.fitBounds(data.coords, {padding: [150, 150]});
     }
 
-    function addBigLabel(coord, text) {
+    function addCleanLabel(coord, text) {
+        // 1. 글자 라벨 (타원 배경 없음)
         const labelIcon = L.divIcon({
-            className: 'custom-wp',
+            className: 'custom-wp-label',
             html: `<div class="wp-label">${text}</div>`,
             iconSize: [0, 0],
-            iconAnchor: [0, 40] 
+            iconAnchor: [-15, 35] // 원형 마커 기준 우측 상단으로 위치 조정
         });
         L.marker(coord, { icon: labelIcon }).addTo(labelLayer);
-        // 지점 표시를 위한 작은 원형 마커 추가
-        L.circleMarker(coord, {radius: 6, color: '#000', fillColor: '#00FF00', fillOpacity: 1, weight: 2}).addTo(labelLayer);
+
+        // 2. 지점 표시를 위한 작은 원형 마커 유지
+        L.circleMarker(coord, {
+            radius: 6, 
+            color: '#000', 
+            fillColor: '#00FF00', 
+            fillOpacity: 1, 
+            weight: 2
+        }).addTo(labelLayer);
     }
 </script>
 </body>
