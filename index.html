@@ -2,52 +2,52 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Direct Segments</title>
+    <title>Direct Segments - Interactive</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f7f9; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
         header { background: #1e272e; color: white; padding: 8px 20px; min-height: 35px; display: flex; align-items: center; }
-        h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.5px; }
-        .controls { padding: 10px 20px; background: white; border-bottom: 1px solid #d1d8dd; display: flex; align-items: center; gap: 12px; }
-        select { padding: 6px 10px; font-size: 0.9rem; border: 1px solid #bcc6cc; border-radius: 4px; min-width: 320px; cursor: pointer; }
+        h1 { margin: 0; font-size: 1.1rem; }
+        .controls { padding: 10px 20px; background: white; border-bottom: 1px solid #d1d8dd; }
+        select { padding: 6px; width: 400px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; }
         .container { display: flex; flex: 1; overflow: hidden; }
-        #map { flex: 1.8; background: #aad3df; }
+        #map { flex: 1.8; background: #f0f0f0; }
         .info-panel { flex: 1.2; padding: 20px; overflow-y: auto; background: white; border-left: 1px solid #d1d8dd; }
-        .summary-box { display: flex; gap: 15px; margin-bottom: 20px; }
-        .card { flex: 1; background: #f8f9fa; padding: 12px; border-radius: 5px; border-left: 4px solid #3498db; }
-        .card-label { font-size: 0.7rem; color: #7f8c8d; font-weight: bold; text-transform: uppercase; }
-        .card-value { font-size: 1.2rem; color: #2c3e50; font-weight: bold; margin-top: 3px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-        thead th { background: #34495e; color: white; position: sticky; top: -20px; padding: 10px 5px; z-index: 10; }
-        tbody td { border-bottom: 1px solid #edf1f2; padding: 8px 5px; text-align: center; }
-        tbody tr { cursor: pointer; transition: background 0.2s; }
-        tbody tr:hover { background: #f1f4f6; }
-        .active-row { background: #e1f5fe !important; font-weight: bold; }
-        .status-msg { text-align: center; margin-top: 50px; color: #95a5a6; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 10px; }
+        th { background: #34495e; color: white; padding: 10px; position: sticky; top: -20px; }
+        td { border-bottom: 1px solid #eee; padding: 10px; text-align: center; cursor: pointer; }
+        tr:hover { background: #f1f4f6; }
+        .active-row { background: #e8f5e9 !important; font-weight: bold; }
+        
+        /* Waypoint Label Style */
+        .wp-label {
+            background: rgba(0, 0, 0, 0.8);
+            color: #00FF00;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+            white-space: nowrap;
+            border: 1px solid #00FF00;
+        }
     </style>
 </head>
 <body>
 
-<header><h1>DIRECT SEGMENTS</h1></header>
+<header><h1>DIRECT SEGMENTS DASHBOARD</h1></header>
 
 <div class="controls">
-    <label for="routeSelect"><small><strong>ROUTE:</strong></small></label>
-    <select id="routeSelect"><option value="" disabled selected>Loading...</option></select>
+    <label><small><strong>SELECT ROUTE:</strong></small></label><br>
+    <select id="routeSelect"><option>Loading...</option></select>
 </div>
 
 <div class="container">
     <div id="map"></div>
     <div class="info-panel">
-        <div id="statusView" class="status-msg">Please select a route.</div>
-        <div id="contentView" style="display:none;">
-            <h2 id="routeTitle" style="margin: 0 0 15px 0; color: #2c3e50; font-size: 1.2rem;">-</h2>
-            <div class="summary-box">
-                <div class="card"><div class="card-label">Avg Fuel Saving</div><div class="card-value" id="totalFuel">0 lbs</div></div>
-                <div class="card" style="border-left-color: #27ae60;"><div class="card-label">Avg Time Saving</div><div class="card-value" id="totalTime">0 min</div></div>
-            </div>
+        <h2 id="routeTitle" style="font-size: 1.1rem; margin-top: 0;">Route Analysis</h2>
+        <div id="tableContainer">
             <table>
-                <thead><tr><th>Start</th><th>End</th><th>Fuel(lbs)</th><th>Time(m)</th></tr></thead>
+                <thead><tr><th>Start WP</th><th>End WP</th><th>Saving(lbs)</th><th>Time(m)</th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
@@ -56,11 +56,12 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    const map = L.map('map', { worldCopyJump: true }).setView([35, 170], 3);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    
-    const atsLayer = L.layerGroup().addTo(map);      // For Black ATS Route
-    const segmentLayer = L.layerGroup().addTo(map);  // For Blue Direct Segments
+    const map = L.map('map', { worldCopyJump: true }).setView([38, 175], 3);
+    L.tileLayer('https://{s}.tile.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+    const atsLayer = L.layerGroup().addTo(map);
+    const segmentLayer = L.layerGroup().addTo(map);
+    const labelLayer = L.layerGroup().addTo(map); // 라벨 전용 레이어
 
     let flightData = [];
     let polylines = [];
@@ -70,65 +71,67 @@
         .then(data => {
             flightData = data;
             const select = document.getElementById('routeSelect');
-            select.innerHTML = '<option value="" disabled selected>Select a Route ('+data.length+')</option>';
-            data.forEach(r => {
+            select.innerHTML = '';
+            data.forEach((route, idx) => {
                 const opt = document.createElement('option');
-                opt.value = r.route_id; opt.textContent = r.route_name;
+                opt.value = route.route_id;
+                opt.textContent = route.route_name;
                 select.appendChild(opt);
+                
+                // 모든 ATS 루트를 배경에 검정색으로 표시
+                if(route.ats_route) {
+                    L.polyline(route.ats_route, {color: '#333', weight: 1.2, opacity: 0.25}).addTo(atsLayer);
+                }
             });
+            displayRoute(data[0]);
         });
 
     document.getElementById('routeSelect').onchange = function() {
-        const route = flightData.find(r => r.route_id === this.value);
-        if(!route) return;
+        const selected = flightData.find(r => r.route_id === this.value);
+        if(selected) displayRoute(selected);
+    };
 
-        document.getElementById('statusView').style.display = 'none';
-        document.getElementById('contentView').style.display = 'block';
-        document.getElementById('routeTitle').innerText = route.route_name;
-
-        atsLayer.clearLayers();
+    function displayRoute(route) {
         segmentLayer.clearLayers();
+        labelLayer.clearLayers();
         polylines = [];
-        
         const tableBody = document.getElementById('tableBody');
         tableBody.innerHTML = '';
+        document.getElementById('routeTitle').innerText = route.route_name;
 
-        // 1. Draw ATS Route (Black Line)
-        if(route.ats_route) {
-            L.polyline(route.ats_route, {color: '#000000', weight: 2, opacity: 0.6}).addTo(atsLayer);
-        }
-
-        // 2. Draw Direct Segments
-        let tF = 0, tT = 0, pts = [];
         route.segments.forEach((s, i) => {
-            tF += s.fuel; tT += s.time;
-            const poly = L.polyline(s.coords, {color: '#3498db', weight: 4, dashArray: '5, 10'}).addTo(segmentLayer);
+            const poly = L.polyline(s.coords, {color: '#3498db', weight: 4, opacity: 0.7}).addTo(segmentLayer);
             polylines.push(poly);
-            pts.push(s.coords[0], s.coords[1]);
 
             const row = document.createElement('tr');
             row.innerHTML = `<td>${s.start}</td><td>${s.end}</td><td>${s.fuel.toLocaleString()}</td><td>${s.time}</td>`;
-            row.onclick = () => highlightSegment(i, s.coords, row);
+            row.onclick = () => {
+                // 하이라이트 초기화 및 적용
+                polylines.forEach(p => p.setStyle({color: '#3498db', weight: 4}));
+                labelLayer.clearLayers(); // 기존 라벨 제거
+
+                poly.setStyle({color: '#00FF00', weight: 7, opacity: 1}); 
+                document.querySelectorAll('tr').forEach(tr => tr.classList.remove('active-row'));
+                row.classList.add('active-row');
+
+                // Waypoint 라벨 생성
+                createLabel(s.coords[0], s.start);
+                createLabel(s.coords[1], s.end);
+
+                map.fitBounds(s.coords, {padding: [150, 150]});
+            };
             tableBody.appendChild(row);
         });
+    }
 
-        document.getElementById('totalFuel').innerText = tF.toLocaleString() + " lbs";
-        document.getElementById('totalTime').innerText = tT + " min";
-        if(pts.length > 0) map.fitBounds(pts, {padding: [50, 50]});
-    };
-
-    function highlightSegment(index, coords, row) {
-        // Reset styles
-        polylines.forEach(p => p.setStyle({color: '#3498db', weight: 4, dashArray: '5, 10'}));
-        document.querySelectorAll('tr').forEach(tr => tr.classList.remove('active-row'));
-
-        // Apply Highlight (Neon Green)
-        const target = polylines[index];
-        target.setStyle({color: '#00FF00', weight: 8, dashArray: null}); // Neon Green Solid
-        target.bringToFront();
-        row.classList.add('active-row');
-
-        map.fitBounds(coords, {padding: [150, 150], maxZoom: 8});
+    function createLabel(coord, text) {
+        const icon = L.divIcon({
+            className: 'custom-label',
+            html: `<div class="wp-label">${text}</div>`,
+            iconSize: [0, 0],
+            iconAnchor: [0, 25] // 지점보다 약간 위에 표시
+        });
+        L.marker(coord, { icon: icon }).addTo(labelLayer);
     }
 </script>
 </body>
