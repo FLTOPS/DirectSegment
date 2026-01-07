@@ -6,11 +6,11 @@
     <title>Direct Segments</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f7f9; }
-        header { background: #2c3e50; color: white; padding: 8px 20px; min-height: 35px; display: flex; align-items: center; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #f4f7f9; }
+        header { background: #1e272e; color: white; padding: 8px 20px; min-height: 35px; display: flex; align-items: center; }
         h1 { margin: 0; font-size: 1.1rem; letter-spacing: 0.5px; }
         .controls { padding: 10px 20px; background: white; border-bottom: 1px solid #d1d8dd; display: flex; align-items: center; gap: 12px; }
-        select { padding: 6px 10px; font-size: 0.9rem; border: 1px solid #bcc6cc; border-radius: 4px; min-width: 300px; outline: none; cursor: pointer; }
+        select { padding: 6px 10px; font-size: 0.9rem; border: 1px solid #bcc6cc; border-radius: 4px; min-width: 320px; cursor: pointer; }
         .container { display: flex; flex: 1; overflow: hidden; }
         #map { flex: 1.8; background: #aad3df; }
         .info-panel { flex: 1.2; padding: 20px; overflow-y: auto; background: white; border-left: 1px solid #d1d8dd; }
@@ -21,12 +21,9 @@
         table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
         thead th { background: #34495e; color: white; position: sticky; top: -20px; padding: 10px 5px; z-index: 10; }
         tbody td { border-bottom: 1px solid #edf1f2; padding: 8px 5px; text-align: center; }
-        
-        /* New: Clickable Row Style */
         tbody tr { cursor: pointer; transition: background 0.2s; }
-        tbody tr:hover { background: #e8f4fd; }
-        tbody tr.active-row { background: #d1e9ff !important; font-weight: bold; }
-
+        tbody tr:hover { background: #f1f4f6; }
+        .active-row { background: #e1f5fe !important; font-weight: bold; }
         .status-msg { text-align: center; margin-top: 50px; color: #95a5a6; }
     </style>
 </head>
@@ -36,26 +33,21 @@
 
 <div class="controls">
     <label for="routeSelect"><small><strong>ROUTE:</strong></small></label>
-    <select id="routeSelect">
-        <option value="" disabled selected>Loading database...</option>
-    </select>
+    <select id="routeSelect"><option value="" disabled selected>Loading...</option></select>
 </div>
 
 <div class="container">
     <div id="map"></div>
     <div class="info-panel">
-        <div id="statusView" class="status-msg">Initializing data...</div>
+        <div id="statusView" class="status-msg">Please select a route.</div>
         <div id="contentView" style="display:none;">
             <h2 id="routeTitle" style="margin: 0 0 15px 0; color: #2c3e50; font-size: 1.2rem;">-</h2>
             <div class="summary-box">
                 <div class="card"><div class="card-label">Avg Fuel Saving</div><div class="card-value" id="totalFuel">0 lbs</div></div>
                 <div class="card" style="border-left-color: #27ae60;"><div class="card-label">Avg Time Saving</div><div class="card-value" id="totalTime">0 min</div></div>
             </div>
-            <h3 style="font-size: 0.9rem; color: #7f8c8d; margin-bottom: 5px;">SEGMENT LOGS (Click row to focus)</h3>
             <table>
-                <thead>
-                    <tr><th>Start</th><th>End</th><th>Fuel(lbs)</th><th>Time(m)</th></tr>
-                </thead>
+                <thead><tr><th>Start</th><th>End</th><th>Fuel(lbs)</th><th>Time(m)</th></tr></thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
@@ -64,86 +56,79 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    const map = L.map('map', { worldCopyJump: true }).setView([30, 165], 3);
+    const map = L.map('map', { worldCopyJump: true }).setView([35, 170], 3);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-    const layers = L.layerGroup().addTo(map);
+    
+    const atsLayer = L.layerGroup().addTo(map);      // For Black ATS Route
+    const segmentLayer = L.layerGroup().addTo(map);  // For Blue Direct Segments
 
     let flightData = [];
-    let segmentPolylines = []; // Store line objects for highlighting
+    let polylines = [];
 
     fetch('./flight_data.json?v=' + Date.now())
         .then(res => res.json())
         .then(data => {
             flightData = data;
             const select = document.getElementById('routeSelect');
-            select.innerHTML = '<option value="" disabled selected>Select a route (' + data.length + ')</option>';
+            select.innerHTML = '<option value="" disabled selected>Select a Route ('+data.length+')</option>';
             data.forEach(r => {
                 const opt = document.createElement('option');
                 opt.value = r.route_id; opt.textContent = r.route_name;
                 select.appendChild(opt);
             });
-            document.getElementById('statusView').innerText = 'Please select a route.';
         });
 
     document.getElementById('routeSelect').onchange = function() {
         const route = flightData.find(r => r.route_id === this.value);
-        if (!route) return;
+        if(!route) return;
 
         document.getElementById('statusView').style.display = 'none';
         document.getElementById('contentView').style.display = 'block';
         document.getElementById('routeTitle').innerText = route.route_name;
 
-        layers.clearLayers();
-        segmentPolylines = []; 
+        atsLayer.clearLayers();
+        segmentLayer.clearLayers();
+        polylines = [];
+        
         const tableBody = document.getElementById('tableBody');
         tableBody.innerHTML = '';
-        
-        let tF = 0, tT = 0, allPts = [];
 
-        route.segments.forEach((s, index) => {
+        // 1. Draw ATS Route (Black Line)
+        if(route.ats_route) {
+            L.polyline(route.ats_route, {color: '#000000', weight: 2, opacity: 0.6}).addTo(atsLayer);
+        }
+
+        // 2. Draw Direct Segments
+        let tF = 0, tT = 0, pts = [];
+        route.segments.forEach((s, i) => {
             tF += s.fuel; tT += s.time;
-            
-            // 1. Create Polyline
-            const poly = L.polyline(s.coords, {
-                color: '#3498db', 
-                weight: 4, 
-                dashArray: '5, 8',
-                index: index // custom property to link with table
-            }).addTo(layers);
+            const poly = L.polyline(s.coords, {color: '#3498db', weight: 4, dashArray: '5, 10'}).addTo(segmentLayer);
+            polylines.push(poly);
+            pts.push(s.coords[0], s.coords[1]);
 
-            L.circleMarker(s.coords[0], {radius: 4, color: '#27ae60', fillOpacity: 1}).addTo(layers);
-            L.circleMarker(s.coords[1], {radius: 4, color: '#e74c3c', fillOpacity: 1}).addTo(layers);
-            
-            poly.bindPopup(`<b>${s.start} ➡️ ${s.end}</b><br>${s.fuel} lbs saved`);
-            segmentPolylines.push(poly);
-            allPts.push(s.coords[0], s.coords[1]);
-
-            // 2. Create Table Row with Click Event
             const row = document.createElement('tr');
-            row.innerHTML = `<td><strong>${s.start}</strong></td><td><strong>${s.end}</strong></td><td>${s.fuel.toLocaleString()}</td><td>${s.time}</td>`;
-            row.onclick = () => focusSegment(index, s.coords, row);
+            row.innerHTML = `<td>${s.start}</td><td>${s.end}</td><td>${s.fuel.toLocaleString()}</td><td>${s.time}</td>`;
+            row.onclick = () => highlightSegment(i, s.coords, row);
             tableBody.appendChild(row);
         });
 
         document.getElementById('totalFuel').innerText = tF.toLocaleString() + " lbs";
         document.getElementById('totalTime').innerText = tT + " min";
-        if (allPts.length > 0) map.fitBounds(allPts, {padding: [50, 50]});
+        if(pts.length > 0) map.fitBounds(pts, {padding: [50, 50]});
     };
 
-    // 3. Focus and Highlight Function
-    function focusSegment(index, coords, rowElement) {
-        // Reset all lines and rows
-        segmentPolylines.forEach(p => p.setStyle({ color: '#3498db', weight: 4 }));
-        document.querySelectorAll('tbody tr').forEach(tr => tr.classList.remove('active-row'));
+    function highlightSegment(index, coords, row) {
+        // Reset styles
+        polylines.forEach(p => p.setStyle({color: '#3498db', weight: 4, dashArray: '5, 10'}));
+        document.querySelectorAll('tr').forEach(tr => tr.classList.remove('active-row'));
 
-        // Highlight selected
-        const selectedPoly = segmentPolylines[index];
-        selectedPoly.setStyle({ color: '#ff3300', weight: 8 }); // Red & Thick
-        selectedPoly.openPopup();
-        rowElement.classList.add('active-row');
+        // Apply Highlight (Neon Green)
+        const target = polylines[index];
+        target.setStyle({color: '#00FF00', weight: 8, dashArray: null}); // Neon Green Solid
+        target.bringToFront();
+        row.classList.add('active-row');
 
-        // Zoom to segment
-        map.fitBounds(coords, { padding: [100, 100], maxZoom: 8 });
+        map.fitBounds(coords, {padding: [150, 150], maxZoom: 8});
     }
 </script>
 </body>
