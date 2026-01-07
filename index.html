@@ -5,7 +5,6 @@
     <title>Direct Segments - Aviation Analytics</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* 지도가 나오지 않는 가장 큰 원인은 부모 및 컨테이너의 높이 설정 부재입니다 */
         html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; flex-direction: column; }
         
@@ -15,9 +14,7 @@
         .controls { padding: 12px 20px; background: white; border-bottom: 1px solid #d1d8dd; z-index: 1000; }
         select { padding: 8px; width: 300px; font-weight: bold; border: 2px solid #2c3e50; border-radius: 4px; cursor: pointer; }
 
-        .container { display: flex; flex: 1; height: calc(100% - 90px); } /* 헤더와 컨트롤 영역을 제외한 나머지 높이 차지 */
-        
-        /* 지도 컨테이너의 명확한 크기 지정 (지도가 안 나올 때 가장 중요한 부분) */
+        .container { display: flex; flex: 1; height: calc(100% - 90px); }
         #map { flex: 1.8; height: 100%; background: #aad3df; position: relative; }
         
         .info-panel { flex: 1.2; padding: 20px; overflow-y: auto; background: white; border-left: 1px solid #d1d8dd; }
@@ -28,13 +25,11 @@
         tr:hover { background: #f1f4f6; }
         .active-row { background: #e8f5e9 !important; font-weight: bold; outline: 2px solid #00FF00; }
 
-        /* 요청하신 2배 크기의 배경 없는 검정색 글자 라벨 */
         .wp-label {
-            color: #000000;      /* 검정색 글자 */
-            font-size: 24px;     /* 2배 크기 */
+            color: #000000;
+            font-size: 24px;
             font-weight: 900;
             white-space: nowrap;
-            /* 글자 시인성을 위한 흰색 외곽선 */
             text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff;
         }
     </style>
@@ -45,7 +40,7 @@
 
 <div class="controls">
     <label><small><strong>SELECT SECTOR:</strong></small></label><br>
-    <select id="sectorSelect"><option>Loading Sector Data...</option></select>
+    <select id="sectorSelect"><option>Loading Data...</option></select>
 </div>
 
 <div class="container">
@@ -61,13 +56,14 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // 2. 지도 초기화 (컨테이너 렌더링 후 실행되도록 맵 객체 생성)
+    // 1. 지도 초기 설정: 최소 축소 비율(minZoom)과 이동 제한 범위(maxBounds) 설정
     const map = L.map('map', { 
-        worldCopyJump: true, 
+        worldCopyJump: true,
+        minZoom: 3, // 너무 작게 축소되지 않도록 제한
+        maxBounds: [[-10, 100], [80, 280]], // 항로가 있는 태평양 중심 영역으로 이동 제한
         zoomControl: true 
     }).setView([35, 175], 3);
     
-    // 안정적인 기본 OpenStreetMap 타일 서버로 교체
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
@@ -79,12 +75,8 @@
     let flightData = [];
     let segmentObjects = [];
 
-    // 3. 데이터 로드 및 초기화
     fetch('./flight_data.json?t=' + Date.now())
-        .then(res => {
-            if (!res.ok) throw new Error("JSON 파일을 찾을 수 없습니다.");
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
             flightData = data;
             const select = document.getElementById('sectorSelect');
@@ -96,10 +88,6 @@
                 select.appendChild(opt);
             });
             updateView(data[0]);
-        })
-        .catch(err => {
-            console.error(err);
-            document.getElementById('viewTitle').innerText = "데이터 로드 오류: flight_data.json 파일을 확인하세요.";
         });
 
     document.getElementById('sectorSelect').onchange = function() {
@@ -114,16 +102,22 @@
         segmentObjects = [];
         const tableBody = document.getElementById('tableBody');
         tableBody.innerHTML = '';
-        document.getElementById('viewTitle').innerText = sectorData.sector_name + " - All Flights";
+        document.getElementById('viewTitle').innerText = sectorData.sector_name;
+
+        let allPoints = [];
 
         sectorData.flights.forEach(flight => {
-            // ATS 루트 표시 (검정색)
-            L.polyline(flight.ats_route, {color: '#000', weight: 1.5, opacity: 0.25}).addTo(atsLayer);
+            // 2. ATS 루트 표시: 색상을 진하게 하고 weight를 3으로 두껍게 변경
+            const atsPoly = L.polyline(flight.ats_route, {
+                color: '#000000', 
+                weight: 3, 
+                opacity: 0.4 
+            }).addTo(atsLayer);
+            
+            allPoints = allPoints.concat(flight.ats_route);
 
-            // Direct Segments 표시 (파란색)
             flight.segments.forEach(s => {
                 const poly = L.polyline(s.coords, {color: '#3498db', weight: 5, opacity: 0.8}).addTo(segmentLayer);
-                
                 const row = document.createElement('tr');
                 row.innerHTML = `<td>${s.start}</td><td>${s.end}</td><td>${s.fuel.toLocaleString()}</td><td>${s.time}</td>`;
                 row.onclick = () => highlightSegment(poly, s, row);
@@ -131,25 +125,22 @@
                 segmentObjects.push(poly);
             });
         });
+
+        // 3. 노선 선택 시 전체 항로가 한눈에 들어오도록 지도를 자동 정렬
+        if (allPoints.length > 0) {
+            map.fitBounds(L.polyline(allPoints).getBounds(), { padding: [30, 30] });
+        }
     }
 
     function highlightSegment(poly, data, row) {
-        // 기존 하이라이트 초기화
         segmentObjects.forEach(p => p.setStyle({color: '#3498db', weight: 5, opacity: 0.8}));
         labelLayer.clearLayers();
         document.querySelectorAll('tr').forEach(tr => tr.classList.remove('active-row'));
 
-        // #00FF00 하이라이트 및 끝점 둥글게 적용
-        poly.setStyle({
-            color: '#00FF00', 
-            weight: 12, 
-            opacity: 1, 
-            lineCap: 'round'
-        });
+        poly.setStyle({ color: '#00FF00', weight: 12, opacity: 1, lineCap: 'round' });
         poly.bringToFront();
         row.classList.add('active-row');
 
-        // 라벨 및 지점 마커 추가
         addCleanLabel(data.coords[0], data.start);
         addCleanLabel(data.coords[1], data.end);
 
@@ -157,16 +148,14 @@
     }
 
     function addCleanLabel(coord, text) {
-        // 타원 배경 없이 글자만 나타나도록 설정
         const labelIcon = L.divIcon({
             className: 'custom-wp-label',
             html: `<div class="wp-label">${text}</div>`,
             iconSize: [0, 0],
-            iconAnchor: [-15, 35] // 원형 마커 기준 위치 조정
+            iconAnchor: [-15, 35]
         });
         L.marker(coord, { icon: labelIcon }).addTo(labelLayer);
 
-        // 지점 표시를 위한 작은 녹색 원형 마커 유지
         L.circleMarker(coord, {
             radius: 7, 
             color: '#000', 
