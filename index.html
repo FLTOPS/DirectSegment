@@ -2,30 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Direct Segments - Enhanced Analytics</title>
+    <title>Direct Segments - Aviation Analytics</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
-        header { background: #1e272e; color: white; padding: 8px 20px; min-height: 35px; display: flex; align-items: center; }
+        /* 지도가 나오지 않는 가장 큰 원인은 부모 및 컨테이너의 높이 설정 부재입니다 */
+        html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; flex-direction: column; }
+        
+        header { background: #1e272e; color: white; padding: 10px 20px; height: 40px; display: flex; align-items: center; z-index: 1001; }
         h1 { margin: 0; font-size: 1.1rem; }
-        .controls { padding: 10px 20px; background: white; border-bottom: 1px solid #d1d8dd; }
-        select { padding: 8px; width: 250px; font-weight: bold; cursor: pointer; border-radius: 4px; border: 2px solid #2c3e50; }
-        .container { display: flex; flex: 1; overflow: hidden; }
-        #map { flex: 1.8; background: #f0f0f0; }
+
+        .controls { padding: 12px 20px; background: white; border-bottom: 1px solid #d1d8dd; z-index: 1000; }
+        select { padding: 8px; width: 300px; font-weight: bold; border: 2px solid #2c3e50; border-radius: 4px; cursor: pointer; }
+
+        .container { display: flex; flex: 1; height: calc(100% - 90px); } /* 헤더와 컨트롤 영역을 제외한 나머지 높이 차지 */
+        
+        /* 지도 컨테이너의 명확한 크기 지정 (지도가 안 나올 때 가장 중요한 부분) */
+        #map { flex: 1.8; height: 100%; background: #aad3df; position: relative; }
+        
         .info-panel { flex: 1.2; padding: 20px; overflow-y: auto; background: white; border-left: 1px solid #d1d8dd; }
+
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        th { background: #2c3e50; color: white; padding: 12px; position: sticky; top: -20px; }
+        th { background: #2c3e50; color: white; padding: 12px; position: sticky; top: 0; }
         td { border-bottom: 1px solid #eee; padding: 12px; text-align: center; cursor: pointer; }
         tr:hover { background: #f1f4f6; }
-        .active-row { background: #e8f5e9 !important; font-weight: bold; border: 2px solid #00FF00; }
-        
-        /* Waypoint Label - 배경 제거 및 글자 강조 */
+        .active-row { background: #e8f5e9 !important; font-weight: bold; outline: 2px solid #00FF00; }
+
+        /* 요청하신 2배 크기의 배경 없는 검정색 글자 라벨 */
         .wp-label {
             color: #000000;      /* 검정색 글자 */
-            font-size: 24px;     /* 기존보다 2배 크기 */
+            font-size: 24px;     /* 2배 크기 */
             font-weight: 900;
             white-space: nowrap;
-            /* 글자 시인성을 위해 흰색 외곽선 추가 */
+            /* 글자 시인성을 위한 흰색 외곽선 */
             text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff;
         }
     </style>
@@ -36,7 +45,7 @@
 
 <div class="controls">
     <label><small><strong>SELECT SECTOR:</strong></small></label><br>
-    <select id="sectorSelect"><option>Loading...</option></select>
+    <select id="sectorSelect"><option>Loading Sector Data...</option></select>
 </div>
 
 <div class="container">
@@ -52,9 +61,16 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // 지도 초기화
-    const map = L.map('map', { worldCopyJump: true }).setView([38, 175], 3);
-    L.tileLayer('https://{s}.tile.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+    // 2. 지도 초기화 (컨테이너 렌더링 후 실행되도록 맵 객체 생성)
+    const map = L.map('map', { 
+        worldCopyJump: true, 
+        zoomControl: true 
+    }).setView([35, 175], 3);
+    
+    // 안정적인 기본 OpenStreetMap 타일 서버로 교체
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
     const atsLayer = L.layerGroup().addTo(map);
     const segmentLayer = L.layerGroup().addTo(map);
@@ -63,9 +79,12 @@
     let flightData = [];
     let segmentObjects = [];
 
-    // 데이터 불러오기
-    fetch('./flight_data.json?v=' + Date.now())
-        .then(res => res.json())
+    // 3. 데이터 로드 및 초기화
+    fetch('./flight_data.json?t=' + Date.now())
+        .then(res => {
+            if (!res.ok) throw new Error("JSON 파일을 찾을 수 없습니다.");
+            return res.json();
+        })
         .then(data => {
             flightData = data;
             const select = document.getElementById('sectorSelect');
@@ -77,6 +96,10 @@
                 select.appendChild(opt);
             });
             updateView(data[0]);
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('viewTitle').innerText = "데이터 로드 오류: flight_data.json 파일을 확인하세요.";
         });
 
     document.getElementById('sectorSelect').onchange = function() {
@@ -95,40 +118,38 @@
 
         sectorData.flights.forEach(flight => {
             // ATS 루트 표시 (검정색)
-            L.polyline(flight.ats_route, {color: '#000', weight: 1.5, opacity: 0.2}).addTo(atsLayer);
+            L.polyline(flight.ats_route, {color: '#000', weight: 1.5, opacity: 0.25}).addTo(atsLayer);
 
-            // Direct Segments 표시
+            // Direct Segments 표시 (파란색)
             flight.segments.forEach(s => {
                 const poly = L.polyline(s.coords, {color: '#3498db', weight: 5, opacity: 0.8}).addTo(segmentLayer);
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `<td>${s.start}</td><td>${s.end}</td><td>${s.fuel.toLocaleString()}</td><td>${s.time}</td>`;
-                row.onclick = () => {
-                    highlight(poly, s, row);
-                };
+                row.onclick = () => highlightSegment(poly, s, row);
                 tableBody.appendChild(row);
                 segmentObjects.push(poly);
             });
         });
     }
 
-    function highlight(poly, data, row) {
-        // 초기화
+    function highlightSegment(poly, data, row) {
+        // 기존 하이라이트 초기화
         segmentObjects.forEach(p => p.setStyle({color: '#3498db', weight: 5, opacity: 0.8}));
         labelLayer.clearLayers();
         document.querySelectorAll('tr').forEach(tr => tr.classList.remove('active-row'));
 
-        // #00FF00 하이라이트 및 둥근 끝점
+        // #00FF00 하이라이트 및 끝점 둥글게 적용
         poly.setStyle({
             color: '#00FF00', 
-            weight: 10, 
+            weight: 12, 
             opacity: 1, 
             lineCap: 'round'
         });
         poly.bringToFront();
         row.classList.add('active-row');
 
-        // 라벨 및 마커 생성
+        // 라벨 및 지점 마커 추가
         addCleanLabel(data.coords[0], data.start);
         addCleanLabel(data.coords[1], data.end);
 
@@ -136,22 +157,22 @@
     }
 
     function addCleanLabel(coord, text) {
-        // 1. 글자 라벨 (타원 배경 없음)
+        // 타원 배경 없이 글자만 나타나도록 설정
         const labelIcon = L.divIcon({
             className: 'custom-wp-label',
             html: `<div class="wp-label">${text}</div>`,
             iconSize: [0, 0],
-            iconAnchor: [-15, 35] // 원형 마커 기준 우측 상단으로 위치 조정
+            iconAnchor: [-15, 35] // 원형 마커 기준 위치 조정
         });
         L.marker(coord, { icon: labelIcon }).addTo(labelLayer);
 
-        // 2. 지점 표시를 위한 작은 원형 마커 유지
+        // 지점 표시를 위한 작은 녹색 원형 마커 유지
         L.circleMarker(coord, {
-            radius: 6, 
+            radius: 7, 
             color: '#000', 
             fillColor: '#00FF00', 
             fillOpacity: 1, 
-            weight: 2
+            weight: 3 
         }).addTo(labelLayer);
     }
 </script>
