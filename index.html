@@ -1,169 +1,176 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Direct Segments - Aviation Analytics</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Segments</title>
     <style>
-        html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; flex-direction: column; }
-        
-        header { background: #1e272e; color: white; padding: 10px 20px; height: 40px; display: flex; align-items: center; z-index: 1001; }
-        h1 { margin: 0; font-size: 1.1rem; }
-
-        .controls { padding: 12px 20px; background: white; border-bottom: 1px solid #d1d8dd; z-index: 1000; }
-        select { padding: 8px; width: 300px; font-weight: bold; border: 2px solid #2c3e50; border-radius: 4px; cursor: pointer; }
-
-        .container { display: flex; flex: 1; height: calc(100% - 90px); }
-        #map { flex: 1.8; height: 100%; background: #aad3df; position: relative; }
-        
-        .info-panel { flex: 1.2; padding: 20px; overflow-y: auto; background: white; border-left: 1px solid #d1d8dd; }
-
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        th { background: #2c3e50; color: white; padding: 12px; position: sticky; top: 0; }
-        td { border-bottom: 1px solid #eee; padding: 12px; text-align: center; cursor: pointer; }
-        tr:hover { background: #f1f4f6; }
-        .active-row { background: #e8f5e9 !important; font-weight: bold; outline: 2px solid #00FF00; }
-
-        .wp-label {
-            color: #000000;
-            font-size: 24px;
-            font-weight: 900;
-            white-space: nowrap;
-            text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff;
+        :root {
+            --bg-color: #1e1e24;
+            --card-bg: #2b2b36;
+            --text-main: #e0e0e0;
+            --accent-green: #4caf50;
+            --accent-green-dim: rgba(76, 175, 80, 0.2);
+            --accent-blue: #2196f3;
+            --border-color: #3e3e4a;
         }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container { width: 100%; max-width: 900px; flex: 1; }
+        h1 { color: var(--accent-blue); font-size: 1.5rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+
+        .input-section { background-color: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-bottom: 20px; }
+        label { display: block; margin-bottom: 10px; font-size: 0.85rem; color: #888; font-weight: bold; }
+        
+        textarea {
+            width: 100%; height: 80px; background-color: #16161a; border: 1px solid var(--border-color);
+            color: #fff; padding: 12px; border-radius: 4px; font-family: 'Courier New', monospace;
+            resize: vertical; box-sizing: border-box; outline: none;
+        }
+
+        button {
+            margin-top: 10px; background-color: var(--accent-blue); color: white; border: none;
+            padding: 12px 20px; border-radius: 4px; font-size: 1rem; cursor: pointer;
+            width: 100%; font-weight: bold; transition: background 0.2s;
+        }
+
+        .visualizer-section {
+            background-color: #16161a; border: 1px solid var(--border-color); padding: 15px;
+            border-radius: 8px; margin-bottom: 20px; font-family: 'Courier New', monospace;
+            line-height: 1.8; font-size: 1.1rem; word-break: break-all; display: none;
+        }
+
+        .route-token { display: inline-block; padding: 2px 4px; margin: 0 2px; border-radius: 3px; }
+        .highlight-point { background-color: var(--accent-green-dim); color: var(--accent-green); border: 1px solid var(--accent-green); font-weight: bold; }
+        .active-focus { background-color: var(--accent-green) !important; color: #000 !important; transform: scale(1.15); box-shadow: 0 0 15px var(--accent-green); z-index: 10; position: relative; }
+
+        .result-section { display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px; }
+        .segment-card { background-color: var(--card-bg); border-left: 5px solid var(--accent-green); padding: 15px 20px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.2s; }
+        .segment-card:hover { background-color: #353542; transform: translateX(8px); }
+        .save-val { color: var(--accent-green); font-weight: bold; margin-left: 4px; }
+
+        footer { margin-top: 20px; padding: 20px 0; text-align: center; border-top: 1px solid var(--border-color); width: 100%; max-width: 900px; }
+        .credit-text { font-size: 0.75rem; color: #666; font-style: italic; }
     </style>
 </head>
 <body>
 
-<header><h1>DIRECT SEGMENTS ANALYTICS</h1></header>
+    <div class="container">
+        <h1>Direct Segments</h1>
+        
+        <div class="input-section">
+            <label>ATS ROUTE INPUT</label>
+            <textarea id="routeInput" placeholder="Paste route here..."></textarea>
+            <button onclick="analyzeRoute()">Analyze Direct Segments</button>
+        </div>
 
-<div class="controls">
-    <label><small><strong>SELECT SECTOR:</strong></small></label><br>
-    <select id="sectorSelect"><option>Loading Data...</option></select>
-</div>
-
-<div class="container">
-    <div id="map"></div>
-    <div class="info-panel">
-        <h2 id="viewTitle" style="font-size: 1.2rem; margin-top: 0;">Sector Details</h2>
-        <table>
-            <thead><tr><th>Start WP</th><th>End WP</th><th>Saving(lbs)</th><th>Time(m)</th></tr></thead>
-            <tbody id="tableBody"></tbody>
-        </table>
+        <div id="routeVisualizer" class="visualizer-section"></div>
+        <div id="resultContainer" class="result-section"></div>
     </div>
-</div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-    // 1. 지도 초기 설정: 최소 축소 비율(minZoom)과 이동 제한 범위(maxBounds) 설정
-    const map = L.map('map', { 
-        worldCopyJump: true,
-        minZoom: 3, // 너무 작게 축소되지 않도록 제한
-        maxBounds: [[-10, 100], [80, 280]], // 항로가 있는 태평양 중심 영역으로 이동 제한
-        zoomControl: true 
-    }).setView([35, 175], 3);
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+    <footer>
+        <p class="credit-text">All data has been analyzed through GE Aerospace's EMS and Fuel Insight.</p>
+    </footer>
 
-    const atsLayer = L.layerGroup().addTo(map);
-    const segmentLayer = L.layerGroup().addTo(map);
-    const labelLayer = L.layerGroup().addTo(map);
+    <script>
+        let directSegmentsDB = [];
 
-    let flightData = [];
-    let segmentObjects = [];
-
-    fetch('./flight_data.json?t=' + Date.now())
-        .then(res => res.json())
-        .then(data => {
-            flightData = data;
-            const select = document.getElementById('sectorSelect');
-            select.innerHTML = '';
-            data.forEach(item => {
-                const opt = document.createElement('option');
-                opt.value = item.sector;
-                opt.textContent = item.sector_name;
-                select.appendChild(opt);
-            });
-            updateView(data[0]);
-        });
-
-    document.getElementById('sectorSelect').onchange = function() {
-        const selected = flightData.find(d => d.sector === this.value);
-        if(selected) updateView(selected);
-    };
-
-    function updateView(sectorData) {
-        atsLayer.clearLayers();
-        segmentLayer.clearLayers();
-        labelLayer.clearLayers();
-        segmentObjects = [];
-        const tableBody = document.getElementById('tableBody');
-        tableBody.innerHTML = '';
-        document.getElementById('viewTitle').innerText = sectorData.sector_name;
-
-        let allPoints = [];
-
-        sectorData.flights.forEach(flight => {
-            // 2. ATS 루트 표시: 색상을 진하게 하고 weight를 3으로 두껍게 변경
-            const atsPoly = L.polyline(flight.ats_route, {
-                color: '#000000', 
-                weight: 3, 
-                opacity: 0.4 
-            }).addTo(atsLayer);
-            
-            allPoints = allPoints.concat(flight.ats_route);
-
-            flight.segments.forEach(s => {
-                const poly = L.polyline(s.coords, {color: '#3498db', weight: 5, opacity: 0.8}).addTo(segmentLayer);
-                const row = document.createElement('tr');
-                row.innerHTML = `<td>${s.start}</td><td>${s.end}</td><td>${s.fuel.toLocaleString()}</td><td>${s.time}</td>`;
-                row.onclick = () => highlightSegment(poly, s, row);
-                tableBody.appendChild(row);
-                segmentObjects.push(poly);
-            });
-        });
-
-        // 3. 노선 선택 시 전체 항로가 한눈에 들어오도록 지도를 자동 정렬
-        if (allPoints.length > 0) {
-            map.fitBounds(L.polyline(allPoints).getBounds(), { padding: [30, 30] });
+        // 페이지 로드 시 JSON 데이터 불러오기
+        async function loadDatabase() {
+            try {
+                const response = await fetch('database.json');
+                if (!response.ok) throw new Error('Network response was not ok');
+                directSegmentsDB = await response.json();
+                console.log("Database Loaded Successfully");
+            } catch (error) {
+                console.error("Failed to load database:", error);
+                alert("Failed to load the segment database. Please check if database.json exists.");
+            }
         }
-    }
 
-    function highlightSegment(poly, data, row) {
-        segmentObjects.forEach(p => p.setStyle({color: '#3498db', weight: 5, opacity: 0.8}));
-        labelLayer.clearLayers();
-        document.querySelectorAll('tr').forEach(tr => tr.classList.remove('active-row'));
+        // 초기화 실행
+        loadDatabase();
 
-        poly.setStyle({ color: '#00FF00', weight: 12, opacity: 1, lineCap: 'round' });
-        poly.bringToFront();
-        row.classList.add('active-row');
+        function analyzeRoute() {
+            const rawInput = document.getElementById('routeInput').value;
+            const visualizer = document.getElementById('routeVisualizer');
+            const resultsDiv = document.getElementById('resultContainer');
 
-        addCleanLabel(data.coords[0], data.start);
-        addCleanLabel(data.coords[1], data.end);
+            visualizer.innerHTML = '';
+            resultsDiv.innerHTML = '';
+            visualizer.style.display = 'block';
 
-        map.fitBounds(data.coords, {padding: [150, 150]});
-    }
+            if (!rawInput.trim()) {
+                visualizer.style.display = 'none';
+                return;
+            }
 
-    function addCleanLabel(coord, text) {
-        const labelIcon = L.divIcon({
-            className: 'custom-wp-label',
-            html: `<div class="wp-label">${text}</div>`,
-            iconSize: [0, 0],
-            iconAnchor: [-15, 35]
-        });
-        L.marker(coord, { icon: labelIcon }).addTo(labelLayer);
+            const tokens = rawInput.replace(/[\/]/g, ' ').split(/\s+/).filter(s => s.length > 0);
+            
+            tokens.forEach((token, index) => {
+                const span = document.createElement('span');
+                span.textContent = token;
+                span.className = 'route-token';
+                span.id = `token-${index}`;
+                visualizer.appendChild(span);
+            });
 
-        L.circleMarker(coord, {
-            radius: 7, 
-            color: '#000', 
-            fillColor: '#00FF00', 
-            fillOpacity: 1, 
-            weight: 3 
-        }).addTo(labelLayer);
-    }
-</script>
+            let foundCount = 0;
+            const upperTokens = tokens.map(t => t.toUpperCase());
+
+            directSegmentsDB.forEach(segment => {
+                const startIndex = upperTokens.indexOf(segment.start.toUpperCase());
+                const endIndex = upperTokens.indexOf(segment.end.toUpperCase());
+
+                if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+                    document.getElementById(`token-${startIndex}`).classList.add('highlight-point');
+                    document.getElementById(`token-${endIndex}`).classList.add('highlight-point');
+                    createResultCard(segment, startIndex, endIndex);
+                    foundCount++;
+                }
+            });
+
+            if (foundCount === 0) {
+                resultsDiv.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">No matching segments found.</div>';
+            }
+        }
+
+        function createResultCard(data, startIndex, endIndex) {
+            const resultsDiv = document.getElementById('resultContainer');
+            const card = document.createElement('div');
+            card.className = 'segment-card';
+            
+            card.innerHTML = `
+                <div style="font-weight:bold;">${data.start} <span style="color:#888; margin:0 10px;">➞</span> ${data.end}</div>
+                <div>
+                    <span>Time <b class="save-val">-${data.timeSave}m</b></span>
+                    <span style="margin-left:15px;">Fuel <b class="save-val">-${data.fuelSave}lbs</b></span>
+                </div>
+            `;
+
+            card.onmouseenter = () => {
+                document.getElementById(`token-${startIndex}`).classList.add('active-focus');
+                document.getElementById(`token-${endIndex}`).classList.add('active-focus');
+            };
+
+            card.onmouseleave = () => {
+                document.getElementById(`token-${startIndex}`).classList.remove('active-focus');
+                document.getElementById(`token-${endIndex}`).classList.remove('active-focus');
+            };
+            
+            resultsDiv.appendChild(card);
+        }
+    </script>
 </body>
 </html>
