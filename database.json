@@ -1,5 +1,4 @@
 [
-  // 
   {"start": "ASTER", "end": "ANDOL", "timeSave": 3, "fuelSave": 499},
   {"start": "ASTER", "end": "KAMSA", "timeSave": 3, "fuelSave": 527},
   {"start": "ASTER", "end": "GTC", "timeSave": 1, "fuelSave": 207},
@@ -24,15 +23,5 @@
   {"start": "FAI", "end": "KIVAK", "timeSave": 1, "fuelSave": 253},
   {"start": "SAMON", "end": "SAPRA", "timeSave": 1, "fuelSave": 85},
   {"start": "NESKO", "end": "SAPRA", "timeSave": 1, "fuelSave": 217},
-  {"start": "CZYZ", "end": "50N010W", "timeSave": , "fuelSave": },
-  {"start": "", "end": "", "timeSave": , "fuelSave": },
-  {"start": "", "end": "", "timeSave": , "fuelSave": },
-  {"start": "", "end": "", "timeSave": , "fuelSave": },
-  {"start": "", "end": "", "timeSave": , "fuelSave": },
-  {"start": "", "end": "", "timeSave": , "fuelSave": },
-  {"start": "", "end": "", "timeSave": , "fuelSave": },
-  {"start": "", "end": "", "timeSave": , "fuelSave": },
-  {"start": "", "end": "", "timeSave": , "fuelSave": },
-  {"start": "", "end": "", "timeSave": , "fuelSave": },
-  {"start": "", "end": "", "timeSave": , "fuelSave": },
+  {"start": "CZYZ", "end": "50N010W", "timeSave": 0, "fuelSave": 0}
 ]
