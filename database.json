@@ -1,5 +1,5 @@
 [
-  // ERW-ICN
+  // 
   {"start": "ASTER", "end": "ANDOL", "timeSave": 3, "fuelSave": 499},
   {"start": "ASTER", "end": "KAMSA", "timeSave": 3, "fuelSave": 527},
   {"start": "ASTER", "end": "GTC", "timeSave": 1, "fuelSave": 207},
