@@ -4,8 +4,10 @@ const urlsToCache = [
   "./index.html",
   "./styles.css",
   "./script.js",
-  "./icon.png"
+  "./icon.png",
+  "./database.json"
 ];
+
 
 // 설치 단계: 캐시 저장
 self.addEventListener("install", event => {

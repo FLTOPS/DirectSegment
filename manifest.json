@@ -1,6 +1,6 @@
 {
-  "name": "CTC App",
-  "short_name": "CTC",
+  "name": "DIRECT SEGMENT App",
+  "short_name": "DS",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
